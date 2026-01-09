@@ -20,8 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
         const participantsList = details.participants.length > 0 
-          ? details.participants.map(p => `<li>${p}</li>`).join("")
-          : "<li><em>No participants yet</em></li>";
+          ? details.participants.map(p => `
+              <li style="list-style-type:none; display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <span>${p}</span>
+                <button class="delete-btn" title="Remove" style="background:none;border:none;color:red;cursor:pointer;font-size:16px;" onclick="window.unregisterParticipant && window.unregisterParticipant('${name}', '${p}')">&#128465;</button>
+              </li>`).join("")
+          : "<li style='list-style-type:none;'><em>No participants yet</em></li>";
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
@@ -30,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants-section">
             <strong>Participants (${details.participants.length}/${details.max_participants}):</strong>
-            <ul class="participants-list">
+            <ul class="participants-list" style="list-style-type:none;padding:0;">
               ${participantsList}
             </ul>
           </div>
@@ -89,6 +93,25 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error signing up:", error);
     }
   });
+
+  // Unregister participant function
+  window.unregisterParticipant = async function(activityName, email) {
+    if (!confirm(`Remove ${email} from ${activityName}?`)) return;
+    try {
+      const response = await fetch(`/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`, {
+        method: "POST"
+      });
+      if (response.ok) {
+        fetchActivities();
+      } else {
+        const result = await response.json();
+        alert(result.detail || "Failed to unregister participant.");
+      }
+    } catch (error) {
+      alert("Failed to unregister participant.");
+      console.error("Error unregistering participant:", error);
+    }
+  };
 
   // Initialize app
   fetchActivities();
